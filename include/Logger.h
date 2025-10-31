@@ -1,6 +1,7 @@
 #ifndef LOGGER_H_
 #define LOGGER_H_
 
+#include "nrf51.h"
 #include <Arduino.h>
 #include <cstdarg>
 #include <cstdio>
@@ -21,6 +22,17 @@ inline const char *logString(LOG_LEVEL level) {
   }
 }
 
+inline void setupLogger() {
+#ifdef DEBUG
+  Serial.begin(115200);
+
+  while (!Serial)
+    delay(10);
+
+  Serial.println("Connected");
+#endif
+}
+
 inline void LOGGER(LOG_LEVEL level, const char *fmt, ...) {
 #ifdef DEBUG
 
@@ -39,12 +51,7 @@ inline void LOGGER(LOG_LEVEL level, const char *fmt, ...) {
 
 #endif
   if (level == ERROR) {
-#ifdef ESP32
-    abort();
-#else
-    noInterrupts();
     NVIC_SystemReset();
-#endif
   }
 }
 

@@ -1,4 +1,4 @@
 #!/bin/bash 
 platformio run -t clean 
-platformio run -e featherm4
-platformio run -e featherm4 --target compiledb
+platformio run -e microbit_v1
+platformio run -e microbit_v1 --target compiledb

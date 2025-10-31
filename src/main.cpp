@@ -1,7 +1,22 @@
 #include <Arduino.h>
+#include <Wire.h>
 
-#include "Runtime.h"
+#include <Adafruit_Microbit.h>
 
-void setup() { Runtime::Setup(); }
+#include "Logger.h"
 
-void loop() { Runtime::Loop(); }
+Adafruit_Microbit uBit;
+
+void setup() {
+  // initialize the logger & serial port
+  setupLogger();
+
+  LOGGER(INFO, "Initializing uBit");
+
+  Wire.begin(); // initialize I2C for sensors
+  uBit.begin(); // initialize micrbot object
+
+  uBit.matrix.print('G');
+}
+
+void loop() {}
