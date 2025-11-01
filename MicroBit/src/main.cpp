@@ -52,23 +52,31 @@ void app() {
   // if we are connected, read the matrix num and display it
   uBit.matrix.print(readMatrixNum());
 
+  // if data is availble from the sensors - capture it - otherwise return early
   if (!pollSensors(&sensorData))
     return;
 
+  // advertise collected data
   advertiseSensorChar(sensorData);
 
+  // read buttons
   readButtons(&btnData);
+
+  // advertise data
   advertiseButtonChar(btnData);
 }
 
 void loop() {
+  // get the current timestamp
   time_t next_ts = micros();
 
+  // run the application logic
   app();
 
-  next_ts += PERIOD_US;
+  // calculate the amount of time to wait
+  int32_t time_to_wait = (int32_t)((next_ts + PERIOD_US) - micros());
 
-  int32_t time_to_wait = (int32_t)(next_ts - micros());
+  // if the time to wait is greater than the loop offset - then wait
   if (time_to_wait > LOOP_OFFSET) {
     delayMicroseconds(time_to_wait - LOOP_OFFSET);
   }

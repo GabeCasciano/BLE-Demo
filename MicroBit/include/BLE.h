@@ -37,12 +37,6 @@
 BLEPeripheral ble;                // wrapper for the peripheral
 BLEService service(UUID_SERVICE); // ble service object
 
-/* The different BLE characteristics that will be advertised
-    - The data to transmit will notify the receiver when it has new data and
-   allow it to read.
-    - The data to read will be read by the microbit and can be check when we
-   have time.
-*/
 BLECharacteristic sensor_char(UUID_SENSOR_CHAR, BLERead | BLENotify,
                               sizeof(SensorData_t));
 BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify,
@@ -50,6 +44,9 @@ BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify,
 BLECharacteristic matrix_char(UUID_MATRIX_CHAR,
                               BLEWrite | BLEWriteWithoutResponse, 1);
 
+/**
+ * @brief Initialize and setup BLE, services and characteristics
+ */
 void setupBLE() {
 
   LOGGER(INFO,
@@ -68,16 +65,36 @@ void setupBLE() {
   ble.begin();
 }
 
+/**
+ * @brief Polls and BLE perif and returns connection status
+ *
+ * @return true if connected
+ */
 bool pollAndConnect() {
   ble.poll();
 
   return ble.central().connected();
 }
 
+/**
+ * @brief Advertises the provided sensor data on corresponding characteristic
+ *
+ * @param data sensor data to be advertised
+ */
 void advertiseSensorChar(SensorData_t data) {}
 
+/**
+ * @brief Advertises the provided button data on corresponding characteristic
+ *
+ * @param data button data to be advertised
+ */
 void advertiseButtonChar(ButtonData_t data) {}
 
+/**
+ * @brief Reads an uin8_t from Matrix characteristic
+ *
+ * @return value that is read, 0 if no value is read
+ */
 uint8_t readMatrixNum() {
   // Need to fix - Will always return 0 unless constantly getting a value
   // take a ptr  to the data and return a bool
