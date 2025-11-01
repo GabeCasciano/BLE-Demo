@@ -16,7 +16,7 @@ void setup() {
   Wire.begin(); // initialize I2C for sensors
   uBit.begin(); // initialize micrbot object
 
-  ubit.display().setBrightness(0);
+  uBit.matrix.print('G');
 }
 
 void loop() {}
