@@ -5,7 +5,8 @@
 
 #include <Adafruit_Microbit.h> // base microbit library
 
-#include "BLE.h"     // custom ble helper
+#include "BLE.h" // custom ble helper
+#include "DStruct.h"
 #include "Logger.h"  // custome logger
 #include "Sensors.h" // custome sensors helper
 #include "delay.h"
@@ -13,7 +14,7 @@
 Adafruit_Microbit uBit; // uBit object for the display
 
 #ifndef LOOP_RATE
-#define LOOP_RATE (1000)
+#define LOOP_RATE (100)
 #endif
 
 #ifndef LOOP_OFFSET
@@ -21,6 +22,9 @@ Adafruit_Microbit uBit; // uBit object for the display
 #endif
 
 constexpr time_t PERIOD_US = 1000000UL / LOOP_RATE;
+
+SensorData_t sensorData;
+ButtonData_t btnData;
 
 void setup() {
   // initialize the logger & serial port
@@ -35,9 +39,16 @@ void setup() {
 }
 
 void iter() {
-  pollSensors();
   if (pollAndConnect()) {
-    auto mat = readMatrixChar();
+    uBit.matrix.print(readMatrixNum());
+
+    if (!pollSensors(&sensorData))
+      return;
+
+    advertiseSensorChar(sensorData);
+
+    readButtons(&btnData);
+    advertiseButtonChar(btnData);
   }
 }
 

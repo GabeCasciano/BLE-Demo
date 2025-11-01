@@ -6,13 +6,16 @@
 
 #include "DStruct.h" // custom data structures
 #include "Logger.h"  // custome logger
-
-SensorData_t data;
+#include "wiring_constants.h"
+#include "wiring_digital.h"
 
 MAG3110 mag = MAG3110();
 MMA8653 xcl;
 
-inline void setupSensors() {
+#define BUTTON_A (5)
+#define BUTTON_B (11)
+
+void setupSensors() {
   if (!mag.initialize()) {
     LOGGER(ERROR, "Could not initialize the magnometer");
   }
@@ -31,14 +34,31 @@ inline void setupSensors() {
   xcl.begin(false, 2);
 }
 
-void pollSensors() {
+void setupButtons() {
+  LOGGER(INFO, "Setting up buttons A: %d B: %d", BUTTON_A, BUTTON_B);
+  pinMode(BUTTON_A, INPUT);
+  pinMode(BUTTON_B, INPUT);
+}
+
+void readButtons(ButtonData_t *data) {
+  data->A = digitalRead(BUTTON_A);
+  data->B = digitalRead(BUTTON_B);
+}
+
+bool pollSensors(SensorData_t *data) {
   if (mag.isCalibrating())
-    return;
+    return false;
 
   if (mag.dataReady())
-    mag.readMag(&data.mag.x, &data.mag.y, &data.mag.z);
+    mag.readMag(&data->mag.x, &data->mag.y, &data->mag.z);
 
   xcl.update();
+
+  data->accel.x = xcl.getXG();
+  data->accel.y = xcl.getYG();
+  data->accel.z = xcl.getZG();
+
+  return true;
 }
 
 #endif

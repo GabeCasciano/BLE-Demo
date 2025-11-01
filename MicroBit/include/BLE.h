@@ -5,6 +5,7 @@
 
 #include "BLEAttribute.h"
 #include <BLEPeripheral.h> // BLE library
+#include <cstdint>
 
 #include "DStruct.h"
 #include "Logger.h"
@@ -44,9 +45,10 @@ BLEService service(UUID_SERVICE); // ble service object
 */
 BLECharacteristic sensor_char(UUID_SENSOR_CHAR, BLERead | BLENotify,
                               sizeof(SensorData_t));
-BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify, 2);
+BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify,
+                              sizeof(ButtonData_t));
 BLECharacteristic matrix_char(UUID_MATRIX_CHAR,
-                              BLEWrite | BLEWriteWithoutResponse, sizeof(char));
+                              BLEWrite | BLEWriteWithoutResponse, 1);
 
 inline void setupBLE() {
 
@@ -74,13 +76,13 @@ inline bool pollAndConnect() {
 
 inline void advertiseSensorChar(SensorData_t data) {}
 
-inline void advertiseButtonChar() {}
+inline void advertiseButtonChar(ButtonData_t data) {}
 
-inline char readMatrixChar() {
+inline uint8_t readMatrixNum() {
   if (!matrix_char.written() && matrix_char.valueLength() < 1)
-    return '\0';
+    return 0;
 
-  return (char)matrix_char.value()[0];
+  return (uint8_t)matrix_char.value()[0];
 }
 
 #endif
