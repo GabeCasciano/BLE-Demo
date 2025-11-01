@@ -9,7 +9,7 @@
 
 enum LOG_LEVEL { INFO, WARNING, ERROR };
 
-inline const char *logString(LOG_LEVEL level) {
+const char *logString(LOG_LEVEL level) {
   switch (level) {
   case INFO:
     return "[INFO]";
@@ -22,7 +22,7 @@ inline const char *logString(LOG_LEVEL level) {
   }
 }
 
-inline void setupLogger() {
+void setupLogger() {
 #ifdef DEBUG
   Serial.begin(115200);
 
@@ -33,7 +33,7 @@ inline void setupLogger() {
 #endif
 }
 
-inline void LOGGER(LOG_LEVEL level, const char *fmt, ...) {
+void LOGGER(LOG_LEVEL level, const char *fmt, ...) {
 #ifdef DEBUG
 
   constexpr size_t BUF_SIZE = 1024;

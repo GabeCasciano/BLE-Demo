@@ -50,7 +50,7 @@ BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify,
 BLECharacteristic matrix_char(UUID_MATRIX_CHAR,
                               BLEWrite | BLEWriteWithoutResponse, 1);
 
-inline void setupBLE() {
+void setupBLE() {
 
   LOGGER(INFO,
          "Settuping up BLE:\n dev name: %s\n local name: %s\n service: %s",
@@ -68,17 +68,19 @@ inline void setupBLE() {
   ble.begin();
 }
 
-inline bool pollAndConnect() {
+bool pollAndConnect() {
   ble.poll();
 
   return ble.central().connected();
 }
 
-inline void advertiseSensorChar(SensorData_t data) {}
+void advertiseSensorChar(SensorData_t data) {}
 
-inline void advertiseButtonChar(ButtonData_t data) {}
+void advertiseButtonChar(ButtonData_t data) {}
 
-inline uint8_t readMatrixNum() {
+uint8_t readMatrixNum() {
+  // Need to fix - Will always return 0 unless constantly getting a value
+  // take a ptr  to the data and return a bool
   if (!matrix_char.written() && matrix_char.valueLength() < 1)
     return 0;
 
