@@ -2,13 +2,11 @@
 #include <Wire.h>
 
 #include <Adafruit_Microbit.h> // base microbit library
-#include <SparkFun_MAG3110.h>
 
-#include "MMA8653.h"
+#include "Logger.h"  // custome logger
+#include "Sensors.h" // custome sensors helpep
 
-#include "Logger.h" // custome logger
-
-Adafruit_Microbit uBit;
+Adafruit_Microbit uBit; // uBit object for the display
 
 void setup() {
   // initialize the logger & serial port
@@ -16,8 +14,9 @@ void setup() {
 
   LOGGER(INFO, "Initializing uBit");
 
-  Wire.begin(); // initialize I2C for sensors
   uBit.begin(); // initialize micrbot object
+
+  setupSensors();
 }
 
-void loop() {}
+void loop() { pollSensors(); }
