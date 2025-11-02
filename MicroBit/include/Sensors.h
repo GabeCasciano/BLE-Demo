@@ -1,8 +1,8 @@
 #ifndef SENSORS_H_
 #define SENSORS_H_
 
-#include "MMA8653.h"
-#include <SparkFun_MAG3110.h>
+#include <LSM303AGR_ACC_Sensor.h>
+#include <LSM303AGR_MAG_Sensor.h>
 
 #include "DStruct.h" // custom data structures
 #include "Logger.h"  // custome logger
@@ -12,35 +12,25 @@
 #define BUTTON_A (5)
 #define BUTTON_B (11)
 
-MAG3110 mag = MAG3110();
-MMA8653 xcl;
+LSM303AGR_ACC_Sensor mag(&Wire);
+LSM303AGR_ACC_Sensor xcl(&Wire);
 
 /**
  * @brief Initialize and setup the sensors
  */
 void setupSensors() {
 
-  // initialize the magnometer, if it failes error out
-  LOGGER(INFO, "Mag init: %d", mag.initialize());
-  if (!mag.initialize()) {
-    LOGGER(ERROR, "Could not initialize the magnometer");
-  }
+  // init i2c
+  LOGGER(INFO, "Initializing I2C");
+  Wire.begin();
 
-  LOGGER(INFO,
-         "Starting and calibrating the magnometer, put the microbit down.");
-  mag.start();
-  mag.calibrate();
+  LOGGER(INFO, "Initializing Mag");
+  mag.begin();
+  mag.Enable();
 
-  // wait for calibration to finish
-  while (mag.isCalibrating()) {
-    delay(10);
-    Serial.print(".");
-  }
-
-  LOGGER(INFO, "Done calibrating");
-
-  LOGGER(INFO, "Initializing accelerometer");
-  xcl.begin(false, 2);
+  LOGGER(INFO, "Initializing Xcl");
+  xcl.begin();
+  xcl.Enable();
 
   LOGGER(INFO, "Done Sensors");
 }
@@ -69,28 +59,13 @@ void readButtons(ButtonData_t *data) {
 /**
  * @brief poll the sensors and read them if possible
  *
- * @param data reference to an instance of SensorData_t where data will be
- * stored
+ * @param xcl_data reference to an int32_t[3]
+ * @param mag_data reference to an int32_t[3]
  *
- * @return false if sensors could not be read
  */
-bool pollSensors(SensorData_t *data) {
-  // if magnometer is calibration return false
-  if (mag.isCalibrating() || !mag.dataReady())
-    return false;
-
-  // read the magnometer values
-  mag.readMag(&data->mag.x, &data->mag.y, &data->mag.z);
-
-  // poll the accelerometer
-  xcl.update();
-
-  // read the accelerometer values
-  data->xcl.x = xcl.getXG();
-  data->xcl.y = xcl.getYG();
-  data->xcl.z = xcl.getZG();
-
-  return true;
+void pollSensors(SensorData_t *data) {
+  xcl.GetAxes(data->xcl_data);
+  mag.GetAxes(data->mag_data);
 }
 
 #endif

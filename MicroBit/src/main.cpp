@@ -30,6 +30,7 @@ SensorData_t sensorData;
 ButtonData_t btnData;
 
 void setup() {
+  Wire.begin();
   // initialize the logger & serial port
   setupLogger();
 
@@ -52,9 +53,8 @@ void app() {
   // if we are connected, read the matrix num and display it
   uBit.matrix.print(readMatrixNum());
 
-  // if data is availble from the sensors - capture it - otherwise return early
-  if (!pollSensors(&sensorData))
-    return;
+  // poll and collect sensor data
+  pollSensors(&sensorData);
 
   // advertise collected data
   advertiseSensorChar(sensorData);
