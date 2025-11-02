@@ -33,7 +33,7 @@ void setup() {
   // initialize the logger & serial port
   setupLogger();
 
-  LOGGER(INFO, "Initializing uBit");
+  LOGGER(INFO, "Initializing uBit ....");
   uBit.begin();
 
   LOGGER(INFO, "Initializing sensors");

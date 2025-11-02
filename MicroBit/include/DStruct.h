@@ -77,6 +77,6 @@ struct ButtonData_t {
    * @brief Destructor
    */
   ~ButtonData_t() = default;
-}
+};
 
 #endif
