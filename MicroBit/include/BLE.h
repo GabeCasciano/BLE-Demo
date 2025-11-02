@@ -67,16 +67,23 @@ static void printBleMac() {
              : "?");
 }
 
+static inline bool softdeviceEnabled() {
+  uint8_t en = 0;
+  (void)sd_softdevice_is_enabled(&en);
+  return en != 0;
+}
+
 /**
  * @brief Initialize and setup BLE, services and characteristics
  */
 void setupBLE() {
 
+  LOGGER(INFO, "SD: %d", softdeviceEnabled());
+
   LOGGER(INFO,
          "Settuping up BLE:\n dev name: %s\n local name: %s\n service: %s",
          DEV_NAME, LOCAL_NAME, service.uuid());
 
-  ble.begin();
   ble.setDeviceName(DEV_NAME);
   ble.setLocalName(LOCAL_NAME);
   ble.setAdvertisedServiceUuid(service.uuid());
@@ -90,10 +97,12 @@ void setupBLE() {
   ble.addAttribute(button_char);
   ble.addAttribute(matrix_char);
 
+  ble.begin();
+
   LOGGER(INFO, "Done setting up BLE");
   printBleMac();
 
-  ble.setAdvertisingInterval(1);
+  ble.setAdvertisingInterval(100);
 }
 
 /**
