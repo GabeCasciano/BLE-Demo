@@ -19,7 +19,9 @@ MMA8653 xcl;
  * @brief Initialize and setup the sensors
  */
 void setupSensors() {
+
   // initialize the magnometer, if it failes error out
+  LOGGER(INFO, "Mag init: %d", mag.initialize());
   if (!mag.initialize()) {
     LOGGER(ERROR, "Could not initialize the magnometer");
   }
