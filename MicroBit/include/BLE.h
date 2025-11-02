@@ -44,6 +44,29 @@ BLECharacteristic button_char(UUID_BUTTON_CHAR, BLERead | BLENotify,
 BLECharacteristic matrix_char(UUID_MATRIX_CHAR,
                               BLEWrite | BLEWriteWithoutResponse, 1);
 
+extern "C" {
+#include "ble_gap.h"
+#include "nrf_sdm.h"
+}
+
+static void printBleMac() {
+  ble_gap_addr_t addr;
+  uint32_t err = sd_ble_gap_address_get(&addr);
+  if (err != NRF_SUCCESS) {
+    LOGGER(ERROR, "sd_ble_gap_addr_get failed: %lu", (unsigned long)err);
+  }
+
+  // Address bytes are LSB first from SoftDevice; print MSB->LSB as usual
+  LOGGER(INFO, "BLE MAC: %02X:%02X:%02X:%02X:%02X:%02X (type=%s)", addr.addr[5],
+         addr.addr[4], addr.addr[3], addr.addr[2], addr.addr[1], addr.addr[0],
+         addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC          ? "PUBLIC"
+         : addr.addr_type == BLE_GAP_ADDR_TYPE_RANDOM_STATIC ? "RANDOM_STATIC"
+         : addr.addr_type == BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_RESOLVABLE ? "RPA"
+         : addr.addr_type == BLE_GAP_ADDR_TYPE_RANDOM_PRIVATE_NON_RESOLVABLE
+             ? "NRPA"
+             : "?");
+}
+
 /**
  * @brief Initialize and setup BLE, services and characteristics
  */
@@ -53,16 +76,24 @@ void setupBLE() {
          "Settuping up BLE:\n dev name: %s\n local name: %s\n service: %s",
          DEV_NAME, LOCAL_NAME, service.uuid());
 
+  ble.begin();
   ble.setDeviceName(DEV_NAME);
   ble.setLocalName(LOCAL_NAME);
   ble.setAdvertisedServiceUuid(service.uuid());
+
+  LOGGER(INFO,
+         "Setting up characteristics:\n Sensor: %s\n Button: %s\n Matrix: %s\n",
+         sensor_char.uuid(), button_char.uuid(), matrix_char.uuid());
 
   ble.addAttribute(service);
   ble.addAttribute(sensor_char);
   ble.addAttribute(button_char);
   ble.addAttribute(matrix_char);
 
-  ble.begin();
+  LOGGER(INFO, "Done setting up BLE");
+  printBleMac();
+
+  ble.setAdvertisingInterval(1);
 }
 
 /**

@@ -47,9 +47,11 @@ void setup() {
 // application code to run in the loop at a fixed timing
 void app() {
   // if pollAndConnect returns false, early return
+  LOGGER(INFO, "HERE1");
   if (!pollAndConnect())
     return;
 
+  LOGGER(INFO, "HERE2");
   // if we are connected, read the matrix num and display it
   uBit.matrix.print(readMatrixNum());
 
@@ -68,16 +70,16 @@ void app() {
 
 void loop() {
   // get the current timestamp
-  time_t next_ts = micros();
+  // time_t next_ts = micros();
 
   // run the application logic
   app();
 
-  // calculate the amount of time to wait
-  int32_t time_to_wait = (int32_t)((next_ts + PERIOD_US) - micros());
-
-  // if the time to wait is greater than the loop offset - then wait
-  if (time_to_wait > LOOP_OFFSET) {
-    delayMicroseconds(time_to_wait - LOOP_OFFSET);
-  }
+  // // calculate the amount of time to wait
+  // int32_t time_to_wait = (int32_t)((next_ts + PERIOD_US) - micros());
+  //
+  // // if the time to wait is greater than the loop offset - then wait
+  // if (time_to_wait > LOOP_OFFSET) {
+  //   delayMicroseconds(time_to_wait - LOOP_OFFSET);
+  // }
 }
