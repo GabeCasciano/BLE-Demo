@@ -82,6 +82,8 @@ void setupLogger() {
   while (!Serial)
     delay(10);
 
+  delay(1000);
+
   Serial.println("Connected");
 #endif
 }

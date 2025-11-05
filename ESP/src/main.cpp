@@ -10,4 +10,7 @@ void setup() {
   setupBle();
 }
 
-void loop() {}
+void loop() {
+  LOGGER(INFO, "Loop");
+  vTaskDelay(10);
+}

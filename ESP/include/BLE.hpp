@@ -6,6 +6,9 @@
 #include <string>
 
 #include "Logger.h"
+#include "NimBLEAdvertising.h"
+#include "NimBLECharacteristic.h"
+#include "nimble/nimble/host/include/host/ble_hs.h"
 
 #ifndef BLE_NAME
 #define BLE_NAME "gabes-ble-demo"
@@ -19,15 +22,6 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) {
     LOGGER(INFO, "Client address: %s\n",
            connInfo.getAddress().toString().c_str());
-
-    /**
-     *  We can use the connection handle here to ask for different connection
-     * parameters. Args: connection handle, min connection interval, max
-     * connection interval latency, supervision timeout. Units; Min/Max
-     * Intervals: 1.25 millisecond increments. Latency: number of intervals
-     * allowed to skip. Timeout: 10 millisecond increments.
-     */
-    pServer->updateConnParams(connInfo.getConnHandle(), 24, 48, 0, 180);
   }
 
   void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo,
@@ -35,75 +29,20 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     LOGGER(INFO, "Client disconnected - start advertising\n");
     NimBLEDevice::startAdvertising();
   }
-
-  void onMTUChange(uint16_t MTU, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "MTU updated: %u for connection ID: %u\n", MTU,
-           connInfo.getConnHandle());
-  }
-
-  /********************* Security handled here *********************/
-  uint32_t onPassKeyDisplay() {
-    LOGGER(INFO, "Server Passkey Display\n");
-    /**
-     * This should return a random 6 digit number for security
-     *  or make your own static passkey as done here.
-     */
-    return 123456;
-  }
-
-  void onConfirmPassKey(NimBLEConnInfo &connInfo, uint32_t pass_key) {
-    LOGGER(INFO, "The passkey YES/NO number: %" PRIu32 "\n", pass_key);
-    /** Inject false if passkeys don't match. */
-    onConfirmPassKey(connInfo, true);
-  }
-
-  void onAuthenticationComplete(NimBLEConnInfo &connInfo) {
-    /** Check that encryption was successful, if not we disconnect the client */
-    if (!connInfo.isEncrypted()) {
-      NimBLEDevice::getServer()->disconnect(connInfo.getConnHandle());
-      LOGGER(INFO, "Encrypt connection failed - disconnecting client\n");
-      return;
-    }
-
-    LOGGER(INFO, "Secured connection to: %s\n",
-           connInfo.getAddress().toString().c_str());
-  }
 };
 
 class CharacteristicCallbacks : public NimBLECharacteristicCallbacks {
 public:
   void onSubscribe(NimBLECharacteristic *pCharacteristic,
                    NimBLEConnInfo &connInfo, uint16_t subValue) {
-    // String str = "Client ID: ";
-    // str += connInfo.getConnHandle();
-    // str += " Address: ";
-    // str += connInfo.getAddress().toString();
-    // if (subValue == 0) {
-    //   str += " Unsubscribed to ";
-    // } else if (subValue == 1) {
-    //   str += " Subscribed to notifications for ";
-    // } else if (subValue == 2) {
-    //   str += " Subscribed to indications for ";
-    // } else if (subValue == 3) {
-    //   str += " Subscribed to notifications and indications for ";
-    // }
-    // str += std::string(pCharacteristic->getUUID());
-    //
-    // LOGGER(INFO, "%s\n", str.c_str());
+    LOGGER(INFO, "%s : onSubscribe(), subValue: %d",
+           pCharacteristic->getUUID().toString().c_str(), subValue);
   }
 };
 
 class PhotoCharacteristicCallbacks : public CharacteristicCallbacks {
   void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
     LOGGER(INFO, "%s : PHOTO:onRead(), value: %s\n",
-           pCharacteristic->getUUID().toString().c_str(),
-           pCharacteristic->getValue().c_str());
-  }
-};
-
-class DoutCharacteristicCallbacks : public CharacteristicCallbacks {
-  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : DIN:onRead(), value: %s\n",
            pCharacteristic->getUUID().toString().c_str(),
            pCharacteristic->getValue().c_str());
   }
@@ -119,18 +58,16 @@ class LedCharacteristicCallback : public CharacteristicCallbacks {
 };
 
 class AinCharacteristicCallback : public CharacteristicCallbacks {
-  void onWrite(NimBLECharacteristic *pCharacteristic,
-               NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : AIN:onWrite(), value: %s\n",
+  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
+    LOGGER(INFO, "%s : AIN:onRead(), value: %s\n",
            pCharacteristic->getUUID().toString().c_str(),
            pCharacteristic->getValue().c_str());
   }
 };
 
-class DinCharacteristicCallback : public CharacteristicCallbacks {
-  void onWrite(NimBLECharacteristic *pCharacteristic,
-               NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : DIN:onWrite(), value: %s\n",
+class ButtonCharacteristicCallback : public CharacteristicCallbacks {
+  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
+    LOGGER(INFO, "%s : BUTTON:onRead(), value: %s\n",
            pCharacteristic->getUUID().toString().c_str(),
            pCharacteristic->getValue().c_str());
   }
@@ -149,21 +86,86 @@ class DescriptorCallbacks : public NimBLEDescriptorCallbacks {
   }
 };
 
+#ifndef UUID_SERVICE
+#define UUID_SERVICE "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88960"
+#endif
+
+#ifndef UUID_PHOTO_CHAR
+#define UUID_PHOTO_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88961"
+#endif
+
+#ifndef UUID_LED_CHAR
+#define UUID_LED_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88962"
+#endif
+
+#ifndef UUID_AIN_CHAR
+#define UUID_AIN_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88963"
+#endif
+
+#ifndef UUID_BTN_CHAR
+#define UUID_BTN_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88964"
+#endif
+
 static NimBLEServer *ble_server;
 static NimBLEService *ble_board_service;
-static NimBLECharacteristic *ble_photo_char, *ble_led_char, *ble_ain_chat,
-    *ble_din_char, *ble_dout_char;
+static NimBLEAdvertising *ble_advertising;
+static NimBLECharacteristic *ble_photo_char, *ble_led_char, *ble_ain_char,
+    *ble_btn_char;
 
 static ServerCallbacks server_callbacks;
+
+static AinCharacteristicCallback ainCharCallbacks;
+static LedCharacteristicCallback ledCharCallbacks;
+static PhotoCharacteristicCallbacks photoCharCallbacks;
+static ButtonCharacteristicCallback btnCharCallbacks;
+
+// My MAC: 0C:8B:95:34:6F:2E from bluetoothctl
+
 void setupBle() {
 
   std::string ble_name(BLE_NAME);
 
   LOGGER(INFO, "Initializing BLE\n Device name: %s", ble_name.c_str());
+
   NimBLEDevice::init(ble_name);
+  NimBLEDevice::setDeviceName(BLE_NAME);
+
+  NimBLEDevice::setSecurityAuth(true, false, true);
 
   ble_server = NimBLEDevice::createServer();
   ble_server->setCallbacks(&server_callbacks);
+
+  ble_board_service = ble_server->createService(UUID_SERVICE);
+
+  ble_ain_char = ble_board_service->createCharacteristic(
+      UUID_AIN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  ble_ain_char->setCallbacks(&ainCharCallbacks);
+  ble_ain_char->setValue(0);
+
+  ble_btn_char = ble_board_service->createCharacteristic(
+      UUID_BTN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  ble_btn_char->setCallbacks(&btnCharCallbacks);
+  ble_btn_char->setValue(0);
+
+  ble_led_char = ble_board_service->createCharacteristic(
+      UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_ENC);
+  ble_led_char->setCallbacks(&ledCharCallbacks);
+
+  ble_photo_char = ble_board_service->createCharacteristic(
+      UUID_PHOTO_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+  ble_photo_char->setCallbacks(&photoCharCallbacks);
+  ble_photo_char->setValue(0);
+
+  ble_board_service->start();
+
+  ble_advertising = NimBLEDevice::getAdvertising();
+  ble_advertising->setName("gabes-ad");
+  ble_advertising->addServiceUUID(ble_board_service->getUUID());
+  ble_advertising->setScanResponse(true);
+
+  ble_advertising->start();
 }
+
+void updateButtonChar(bool button_state) {}
 
 #endif
