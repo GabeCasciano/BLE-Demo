@@ -1,0 +1,8 @@
+[2025-11-05 00:48:24,123]-[DEBUG]: [Mqtt] - Creating Client Instance: name: gabes-demo-client host: localhost:1883
+[2025-11-05 00:48:24,129]-[DEBUG]: [Main] - Creating MainWindow
+[2025-11-05 00:48:24,311]-[DEBUG]: [Main] - Maximizaing MainWindow
+[2025-11-05 00:49:01,787]-[DEBUG]: [Mqtt] - Creating Client Instance: name: gabes-demo-client host: localhost:1883
+[2025-11-05 00:49:01,791]-[DEBUG]: [Main] - Creating MainWindow
+[2025-11-05 00:49:01,939]-[DEBUG]: [Main] - Maximizaing MainWindow
+[2025-11-05 00:49:06,691]-[DEBUG]: [Mqtt] - Not connected anyways
+[2025-11-05 00:49:09,369]-[DEBUG]: [Mqtt] - Not connected anyways

@@ -1,0 +1,5 @@
+{
+  "host_name": "localhost",
+  "client_name": "gabes-demo-client",
+  "host_port": 1883
+}
