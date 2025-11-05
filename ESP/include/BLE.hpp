@@ -29,7 +29,7 @@
 #endif
 
 #ifndef UUID_LED_CHAR
-#define UUID_LED_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88962"
+#define UUID_LED_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88965"
 #endif
 
 #ifndef UUID_AIN_CHAR
@@ -74,8 +74,7 @@ void setupBle() {
   ble_btn_char->setValue(0);
 
   ble_led_char = ble_board_service->createCharacteristic(
-      UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_NR | NIMBLE_PROPERTY::WRITE,
-      sizeof(uint8_t));
+      UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_NR, sizeof(uint8_t));
 
   ble_photo_char = ble_board_service->createCharacteristic(
       UUID_PHOTO_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
@@ -107,6 +106,14 @@ void updateAinChar(uint16_t reading) {
   ble_ain_char->notify();
 }
 
-uint8_t readLedChar() { return ble_led_char->getValue()[0]; }
+bool readLedChar(uint8_t *data) {
+  std::string val = ble_led_char->getValue();
+  if (val.empty())
+    return false;
+
+  *data = (uint8_t)val[0];
+
+  return true;
+}
 
 #endif

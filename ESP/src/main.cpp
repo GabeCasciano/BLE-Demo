@@ -12,5 +12,13 @@ void setup() {
 
 void loop() {
   LOGGER(INFO, "Loop");
-  vTaskDelay(10);
+
+  uint8_t led_value;
+
+  updateButtonChar(digitalRead(BUTTON_PIN));
+  updatePhotoChar(readOversampleAnalog(PHOTO_PIN, 10));
+  updateAinChar(readOversampleAnalog(AIN, 10));
+
+  readLedChar(&led_value);
+  setLedPWM(led_value);
 }
