@@ -2,13 +2,15 @@
 #define BLE_H_
 
 #include <Arduino.h>
-#include <NimBLEDevice.h>
+#include <stdint.h>
 #include <string>
 
+#include "Board.h"
 #include "Logger.h"
+
 #include "NimBLEAdvertising.h"
 #include "NimBLECharacteristic.h"
-#include "nimble/nimble/host/include/host/ble_hs.h"
+#include <NimBLEDevice.h>
 
 #ifndef BLE_NAME
 #define BLE_NAME "gabes-ble-demo"
@@ -17,74 +19,6 @@
 #ifndef SERVICE_NAME
 #define SERVICE_NAME "gabes-board-service"
 #endif
-
-class ServerCallbacks : public NimBLEServerCallbacks {
-  void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "Client address: %s\n",
-           connInfo.getAddress().toString().c_str());
-  }
-
-  void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo,
-                    int reason) {
-    LOGGER(INFO, "Client disconnected - start advertising\n");
-    NimBLEDevice::startAdvertising();
-  }
-};
-
-class CharacteristicCallbacks : public NimBLECharacteristicCallbacks {
-public:
-  void onSubscribe(NimBLECharacteristic *pCharacteristic,
-                   NimBLEConnInfo &connInfo, uint16_t subValue) {
-    LOGGER(INFO, "%s : onSubscribe(), subValue: %d",
-           pCharacteristic->getUUID().toString().c_str(), subValue);
-  }
-};
-
-class PhotoCharacteristicCallbacks : public CharacteristicCallbacks {
-  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : PHOTO:onRead(), value: %s\n",
-           pCharacteristic->getUUID().toString().c_str(),
-           pCharacteristic->getValue().c_str());
-  }
-};
-
-class LedCharacteristicCallback : public CharacteristicCallbacks {
-  void onWrite(NimBLECharacteristic *pCharacteristic,
-               NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : LED:onWrite(), value: %s\n",
-           pCharacteristic->getUUID().toString().c_str(),
-           pCharacteristic->getValue().c_str());
-  }
-};
-
-class AinCharacteristicCallback : public CharacteristicCallbacks {
-  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : AIN:onRead(), value: %s\n",
-           pCharacteristic->getUUID().toString().c_str(),
-           pCharacteristic->getValue().c_str());
-  }
-};
-
-class ButtonCharacteristicCallback : public CharacteristicCallbacks {
-  void onRead(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s : BUTTON:onRead(), value: %s\n",
-           pCharacteristic->getUUID().toString().c_str(),
-           pCharacteristic->getValue().c_str());
-  }
-};
-
-/** Handler class for descriptor actions */
-class DescriptorCallbacks : public NimBLEDescriptorCallbacks {
-  void onWrite(NimBLEDescriptor *pDescriptor, NimBLEConnInfo &connInfo) {
-    String dscVal = pDescriptor->getValue();
-    LOGGER(INFO, "Descriptor written value: %s\n", dscVal.c_str());
-  }
-
-  void onRead(NimBLEDescriptor *pDescriptor, NimBLEConnInfo &connInfo) {
-    LOGGER(INFO, "%s Descriptor read\n",
-           pDescriptor->getUUID().toString().c_str());
-  }
-};
 
 #ifndef UUID_SERVICE
 #define UUID_SERVICE "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88960"
@@ -112,13 +46,6 @@ static NimBLEAdvertising *ble_advertising;
 static NimBLECharacteristic *ble_photo_char, *ble_led_char, *ble_ain_char,
     *ble_btn_char;
 
-static ServerCallbacks server_callbacks;
-
-static AinCharacteristicCallback ainCharCallbacks;
-static LedCharacteristicCallback ledCharCallbacks;
-static PhotoCharacteristicCallbacks photoCharCallbacks;
-static ButtonCharacteristicCallback btnCharCallbacks;
-
 // My MAC: 0C:8B:95:34:6F:2E from bluetoothctl
 
 void setupBle() {
@@ -133,27 +60,26 @@ void setupBle() {
   NimBLEDevice::setSecurityAuth(true, false, true);
 
   ble_server = NimBLEDevice::createServer();
-  ble_server->setCallbacks(&server_callbacks);
 
   ble_board_service = ble_server->createService(UUID_SERVICE);
 
   ble_ain_char = ble_board_service->createCharacteristic(
-      UUID_AIN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
-  ble_ain_char->setCallbacks(&ainCharCallbacks);
+      UUID_AIN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
+      sizeof(uint16_t));
   ble_ain_char->setValue(0);
 
   ble_btn_char = ble_board_service->createCharacteristic(
-      UUID_BTN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
-  ble_btn_char->setCallbacks(&btnCharCallbacks);
+      UUID_BTN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
+      sizeof(bool));
   ble_btn_char->setValue(0);
 
   ble_led_char = ble_board_service->createCharacteristic(
-      UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_ENC);
-  ble_led_char->setCallbacks(&ledCharCallbacks);
+      UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_NR | NIMBLE_PROPERTY::WRITE,
+      sizeof(uint8_t));
 
   ble_photo_char = ble_board_service->createCharacteristic(
-      UUID_PHOTO_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
-  ble_photo_char->setCallbacks(&photoCharCallbacks);
+      UUID_PHOTO_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
+      sizeof(uint16_t));
   ble_photo_char->setValue(0);
 
   ble_board_service->start();
@@ -166,6 +92,21 @@ void setupBle() {
   ble_advertising->start();
 }
 
-void updateButtonChar(bool button_state) {}
+void updateButtonChar(bool button_state) {
+  ble_btn_char->setValue(button_state);
+  ble_btn_char->notify();
+}
+
+void updatePhotoChar(uint16_t reading) {
+  ble_photo_char->setValue(reading);
+  ble_photo_char->notify();
+}
+
+void updateAinChar(uint16_t reading) {
+  ble_ain_char->setValue(reading);
+  ble_ain_char->notify();
+}
+
+uint8_t readLedChar() { return ble_led_char->getValue()[0]; }
 
 #endif
