@@ -2,134 +2,86 @@ from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 import pyqtgraph as pg
 import numpy as np
+from pydantic import BaseModel
 
 
-class DualPointPlotWidget(QWidget):
-    class DualPointPlot(pg.PlotWidget):
+class ConfigModel(BaseModel):
+    class LabelModel(BaseModel):
+        text: str = "label"
+        size: int = 20
+    buffer: int = 100
+    title: LabelModel
+    y_label: LabelModel
+    x_label: LabelModel
+    data_label: str = "data"
+    color: str = "#ff0000"
 
-        def __init__(
-            self,
-            buffer_size: int = 100,
-            title: str = "Title",
-            title_size: int = 24,
-            y_label: str = "label",
-            y_label_size: int = 20,
-            x_label: str = "duration",
-            x_label_size: int = 20,
-            color_1: str = "#ff0000",
-            color_2: str = "#ffff00",
-            width: int = 200,
-            height: int = 100,
-            parent=None,
-        ):
+class PlotWidget(QWidget):
+    class Plot(pg.PlotWidget):
+        def __init__(self, config: ConfigModel, width: int = 200, height: int = 100, parent = None):
             super().__init__(parent)
 
+            self.config = config
             self.plotItem.setLabel(
                 "left",
-                f'<span style="font-size: {str(y_label_size)}px">{y_label}</span>',
+                f'<span style="font-size: {str(self.config.y_label.size)}px">{self.config.y_label.text}</span>',
             )
             self.plotItem.setLabel(
                 "bottom",
-                f'<span style="font-size: {str(x_label_size)}px">{x_label}</span>',
+                f'<span style="font-size: {str(self.config.x_label.size)}px">{self.config.x_label.text}</span>',
             )
+
             self.plotItem.setTitle(
-                f'<span style="font-size: {str(title_size)}px">{title}</span>'
+                f'<span style="font-size: {str(self.config.title.size)}px">{self.config.title.text}</span>'
             )
+
             self.plotItem.showGrid(True, True, 0.5)
             self.plotItem.enableAutoRange(True, True)
 
-            self._d1_plot = self.plotItem.plot(pen=pg.mkPen(color=color_1, width=2))
-            self._d2_plot = self.plotItem.plot(pen=pg.mkPen(color=color_2, width=2))
+            self._plot = self.plotItem.plot(pen=pg.mkPen(color=self.config.color, width=2))
 
-            
-            self._d1_plot.setClipToView(True)
-            self._d2_plot.setClipToView(True)
+            self._plot.setClipToView(True)
 
-            self._buf_size = buffer_size
-
-            self._d1_np_arr = np.zeros(self._buf_size, dtype=np.float32)
-            self._d2_np_arr = np.zeros(self._buf_size, dtype=np.float32)
+            self._np_arr = np.zeros(self.config.buffer, dtype=np.float32)
 
             self.setMinimumSize(width, height)
             self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         @pyqtSlot()
         def ClearPlot(self):
-            self._d1_np_arr = np.zeros(self._buf_size, dtype=np.float32)
-            self._d2_np_arr = np.zeros(self._buf_size, dtype=np.float32)
+            self._np_arr = np.zeros(self.config.buffer, dtype=np.float32)
 
         @pyqtSlot(float)
-        def UpdateD1(self, d1: float):
-            self._d1_np_arr = np.roll(self._d1_np_arr, -1)
-            self._d1_np_arr[-1] = d1
+        def Update(self, data: float):
+            self._np_arr = np.roll(self._np_arr, -1)
+            self._np_arr[-1] = data
+            self._plot.setData(y=self._np_arr)
 
-            self._d1_plot.setData(y=self._d1_np_arr)
 
-
-        @pyqtSlot(float)
-        def UpdateD2(self, d2: float):
-            self._d2_np_arr = np.roll(self._d2_np_arr, -1)
-            self._d2_np_arr[-1] = d2
-
-            self._d2_plot.setData(y = self._d2_np_arr)
-
-    def __init__(
-        self,
-        buffer_size: int = 100,
-        title: str = "Title",
-        title_size: int = 24,
-        y_label: str = "label",
-        y_label_size: int = 20,
-        x_label: str = "duration",
-        x_label_size: int = 20,
-        d1_label: str = "d1",
-        color_1: str = "#ff0000",
-        d2_label: str = "d2",
-        color_2: str = "#ffff00",
-        width: int = 200,
-        height: int = 100,
-        parent=None,
-    ):
+    def __init__(self, config: ConfigModel, width: int = 200, height: int = 100, parent = None):
         super().__init__(parent)
-
-        self._plot = DualPointPlotWidget.DualPointPlot(
-            buffer_size,
-            title,
-            title_size,
-            y_label,
-            y_label_size,
-            x_label,
-            x_label_size,
-            color_1,
-            color_2,
-            width,
-            height,
-            parent,
-        )
+        self.config = config
+        self._plot = PlotWidget.Plot(config, width, height, parent)
 
         v_box = QVBoxLayout()
-        label_h_box = QHBoxLayout()
-        _d1_label = QLabel(f"{d1_label}")
-        _d1_label.setStyleSheet(f"font-size: 20px; color: {color_1}")
-        _d2_label = QLabel(f"{d2_label}")
-        _d2_label.setStyleSheet(f"font-size: 20px; color: {color_2}")
-
-        label_h_box.addWidget(_d1_label)
-        label_h_box.addWidget(_d2_label)
+        self.data_label = QLabel(f"{self.config.data_label}: 0")
+        self.data_label.setStyleSheet(f"font-size: 20px; color: {self.config.color}")
 
         v_box.addWidget(self._plot)
-        v_box.addLayout(label_h_box)
+        v_box.addWidget(self.data_label)
 
         self.setLayout(v_box)
+
+    def _set_data_label(self, data:float):
+        self.data_label.setText(f"{self.config.data_label}: {data}")
 
     @pyqtSlot()
     def ClearPlot(self):
         self._plot.ClearPlot()
+        self._set_data_label(0)
 
     @pyqtSlot(float)
-    def UpdateD1(self, d1: float):
-        self._plot.UpdateD1(d1)
+    def Update(self, data:float)
+        self._plot.Update(data)
+        self._set_data_label(data)
 
-    @pyqtSlot(float)
-    def UpdateD2(self, d2: float):
-        self._plot.UpdateD2(d2)
