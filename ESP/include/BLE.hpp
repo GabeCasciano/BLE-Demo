@@ -21,23 +21,23 @@
 #endif
 
 #ifndef UUID_SERVICE
-#define UUID_SERVICE "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88960"
+#define UUID_SERVICE "00000000-0919-1997-2025-000000000000"
 #endif
 
 #ifndef UUID_PHOTO_CHAR
-#define UUID_PHOTO_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88961"
+#define UUID_PHOTO_CHAR "00000000-0919-1997-2025-000000000001"
 #endif
 
 #ifndef UUID_LED_CHAR
-#define UUID_LED_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88965"
+#define UUID_LED_CHAR "00000000-0919-1997-2025-000000000002"
 #endif
 
 #ifndef UUID_AIN_CHAR
-#define UUID_AIN_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88963"
+#define UUID_AIN_CHAR "00000000-0919-1997-2025-000000000003"
 #endif
 
 #ifndef UUID_BTN_CHAR
-#define UUID_BTN_CHAR "dbbb06b1-1b2a-4a42-ac4e-6c64a9d88964"
+#define UUID_BTN_CHAR "00000000-0919-1997-2025-000000000004"
 #endif
 
 static NimBLEServer *ble_server;
@@ -66,12 +66,12 @@ void setupBle() {
   ble_ain_char = ble_board_service->createCharacteristic(
       UUID_AIN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
       sizeof(uint16_t));
-  ble_ain_char->setValue(0);
+  ble_ain_char->setValue((uint16_t)0);
 
   ble_btn_char = ble_board_service->createCharacteristic(
       UUID_BTN_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
       sizeof(bool));
-  ble_btn_char->setValue(0);
+  ble_btn_char->setValue((uint8_t)0);
 
   ble_led_char = ble_board_service->createCharacteristic(
       UUID_LED_CHAR, NIMBLE_PROPERTY::WRITE_NR, sizeof(uint8_t));
@@ -79,7 +79,7 @@ void setupBle() {
   ble_photo_char = ble_board_service->createCharacteristic(
       UUID_PHOTO_CHAR, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY,
       sizeof(uint16_t));
-  ble_photo_char->setValue(0);
+  ble_photo_char->setValue((uint16_t)0);
 
   ble_board_service->start();
 

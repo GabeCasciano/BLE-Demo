@@ -47,7 +47,7 @@ inline uint16_t readOversampleAnalog(uint8_t pin, uint8_t over_sample) {
   // make sure always greater than 0
   over_sample = (over_sample) ? over_sample : 1;
 
-  uint32_t sum;
+  uint32_t sum = 0;
 
   for (short i = 0; i < over_sample; ++i)
     sum += analogRead(PHOTO_PIN);
