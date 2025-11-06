@@ -77,9 +77,9 @@ class MqttClient:
         self.client.disconnect()
         print("MQTT Stopped")
 
-    def pub_photo(self, photo_value: int):
-        self.client.publish(TOPIC_PHOTO, photo_value)
-
+    def PubValue(self, topic:str, payload:str):
+        self.client.publish(topic, payload)
+        print(f"Pubbing -> {topic}:\"{payload}\"")
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Route BLE traffic to MQTT")
@@ -129,22 +129,25 @@ async def main():
     async with BleakClient(args.mac) as bclient:
         print(f"Connected: {bclient.is_connected}")
 
-        while bclient.is_connected and not stop_event.is_set()
+        while bclient.is_connected and not stop_event.is_set():
             try:
                 photo = int.from_bytes(
                     await bclient.read_gatt_char(UUID_PHOTO_CHAR), "little", signed=False
                 )
                 print(f"Value from {UUID_PHOTO_CHAR}: {photo}")
+                mclient.PubValue(TOPIC_PHOTO, str(photo))
 
                 ain = int.from_bytes(
                     await bclient.read_gatt_char(UUID_AIN_CHAR), "little", signed=False
                 )
                 print(f"Value from {UUID_AIN_CHAR}: {ain}")
+                mclient.PubValue(TOPIC_AIN, str(ain))
 
                 btn = int.from_bytes(
                     await bclient.read_gatt_char(UUID_BTN_CHAR), "little", signed=False
                 )
                 print(f"Value from {UUID_BTN_CHAR}: {btn}")
+                mclient.PubValue(TOPIC_BTN, str(btn))
 
                 await bclient.write_gatt_char(UUID_LED_CHAR, mclient.led_value_bytes, True)
 
