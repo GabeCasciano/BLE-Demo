@@ -1,16 +1,35 @@
-from paho.mqtt.client import Client, MQTTv5, topic_matches_sub
+from paho.mqtt.client import Client, MQTTMessage, MQTTv5, topic_matches_sub
 import json
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QTimer, QObject 
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QTimer, QObject
 from PyQt5.QtWidgets import QWidget
 import logging
 
 from pydantic import BaseModel
 from pathlib import Path
 
+
 class MqttClient(QWidget):
 
-    BaseTopic = "GABES-DEMO"
     LOG_FMT_STR = f"[Mqtt] - %s"
+
+    BASE_TOPIC = "GABESDEMO"
+    READ_TOPIC = "READ"
+    WRITE_TOPIC = "WRITE"
+
+    TOPIC_LED = f"{BASE_TOPIC}/{WRITE_TOPIC}/LED_VALUE"
+    TOPIC_PHOTO = f"{BASE_TOPIC}/{READ_TOPIC}/PHOTO_VALUE"
+    TOPIC_AIN = f"{BASE_TOPIC}/{READ_TOPIC}/AIN_VALUE"
+    TOPIC_BTN = f"{BASE_TOPIC}/{READ_TOPIC}/BTN_VALUE"
+
+    TOPIC_ALL_READ = f"{BASE_TOPIC}/{READ_TOPIC}/#"
+
+    ConnectedSignal = pyqtSignal(bool)
+
+    LedSignal = pyqtSignal(int)
+    BtnSignal = pyqtSignal(bool)
+    AinSignal = pyqtSignal(int)
+
+    EveryMsgSignal = pyqtSignal(str)
 
     class Settings(BaseModel):
         host_name: str = "localhost"
@@ -67,7 +86,7 @@ class MqttClient(QWidget):
 
     _instance = None
     _settings = None
-    _settings_file = None 
+    _settings_file = None
 
     @classmethod
     def get_instance(cls, filename: str = "settings.json", parent=None):
@@ -129,12 +148,33 @@ class MqttClient(QWidget):
 
     def _sub_all_topcis(self):
         logging.debug(MqttClient.LOG_FMT_STR, f"Subbing all topics")
+        self._client.subscribe(self.TOPIC_ALL_READ)
+        self._client.message_callback_add(self.TOPIC_ALL_READ, self._on_message)
+
+        self._client.subscribe(self.TOPIC_AIN)
+        self._client.message_callback_add(self.TOPIC_AIN, self._on_ain_calbback)
+
+        self._client.subscribe(self.TOPIC_BTN)
+        self._client.message_callback_add(self.TOPIC_BTN, self._on_btn_calbback)
+
+        self._client.subscribe(self.TOPIC_PHOTO)
+        self._client.message_callback_add(self.TOPIC_PHOTO, self._on_photo_calbback)
 
     def _not_connected_warn(self):
         logging.warning(MqttClient.LOG_FMT_STR, "Not connected to broker")
 
-    ## add private functions here for topic callbacks
+    def _on_message(self, client: Client, userdata, msg: MQTTMessage):
+        logging.debug(MqttClient.LOG_FMT_STR, f"{msg.topic}:{msg.payload.decode()}")
+        self.EveryMsgSignal.emit(f"{msg.topic}:{msg.payload.decode()}")
 
+    def _on_ain_calbback(self, client: Client, userdata, msg: MQTTMessage):
+        self.AinSignal.emit(int(msg.payload.decode()))
+
+    def _on_btn_calbback(self, client: Client, userdata, msg: MQTTMessage):
+        self.BtnSignal.emit(int(msg.payload.decode()))
+
+    def _on_photo_calbback(self, client: Client, userdata, msg: MQTTMessage):
+        self.PhotoSignal.emit(int(msg.payload.decode()))
 
     @pyqtSlot()
     def DisconnectBroker(self):
@@ -149,7 +189,7 @@ class MqttClient(QWidget):
                     MqttClient.LOG_FMT_STR, f"Error disconnecting from broker: {err}"
                 )
         else:
-            logging.debug(MqttClient.LOG_FMT_STR, "Not connected anyways")
+            logging.info(MqttClient.LOG_FMT_STR, "Not connected anyways")
 
     @pyqtSlot()
     def ConnectBroker(self):
@@ -166,7 +206,15 @@ class MqttClient(QWidget):
                 return
             self._client.loop_start()
         else:
-            logging.debug(MqttClient.LOG_FMT_STR, "Already connected")
+            logging.info(MqttClient.LOG_FMT_STR, "Already connected")
 
-
-    ## add slots here to publish data across Qt
+    @pyqtSlot(int)
+    def SetLEDValue(self, value: int):
+        if self.connected:
+            if value <= 255:
+                self._client.publish(self.TOPIC_LED, value)
+                logging.info(
+                    MqttClient.LOG_FMT_STR, f"Pubbing: {self.TOPIC_LED}:{value}"
+                )
+        else:
+            logging.info(MqttClient.LOG_FMT_STR, "Mqtt client is disconnected")
