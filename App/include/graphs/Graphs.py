@@ -81,7 +81,7 @@ class PlotWidget(QWidget):
         self._set_data_label(0)
 
     @pyqtSlot(float)
-    def Update(self, data:float)
+    def Update(self, data:float):
         self._plot.Update(data)
         self._set_data_label(data)
 

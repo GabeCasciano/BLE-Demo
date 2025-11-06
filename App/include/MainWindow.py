@@ -1,11 +1,19 @@
-
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget, QStatusBar
+from PyQt5.QtWidgets import (
+    QLabel,
+    QMainWindow,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+    QStatusBar,
+)
 import time
 
 from .Mqtt import MqttClient
 from .MenuBar import MenuBar
+from .graphs.Graphs import ConfigModel, PlotWidget
+
 import logging
 
 
@@ -92,7 +100,7 @@ class MainWindow(QMainWindow):
         set_dark_mode(self)
 
         self.setWindowTitle("Gabe's BLE Demo")
-        
+
         central_widget = QWidget(self)
         self.setCentralWidget(central_widget)
 
@@ -101,12 +109,46 @@ class MainWindow(QMainWindow):
         menu_bar = MenuBar.get_instance(self)
         self.setMenuBar(menu_bar)
 
-        tab_widget = QTabWidget()
+        self.photo_plot = PlotWidget(
+            ConfigModel(
+                buffer=100,
+                title=ConfigModel.LabelModel(text="Photo Res", size=30),
+                y_label=ConfigModel.LabelModel(text="Value", size=20),
+                x_label=ConfigModel.LabelModel(text="Time", size=20),
+                data_label="Photo",
+                color="#ff0000",
+            )
+        )
 
-        tab_widget.setGeometry(0, 0, 500, 500)
+        self.ain_plot = PlotWidget(
+            ConfigModel(
+                buffer=100,
+                title=ConfigModel.LabelModel(text="Ain", size=30),
+                y_label=ConfigModel.LabelModel(text="Value", size=20),
+                x_label=ConfigModel.LabelModel(text="Time", size=20),
+                data_label="Ain",
+                color="#00ff00",
+            )
+        )
+
+        self.btn_plot = PlotWidget(
+            ConfigModel(
+                buffer=100,
+                title=ConfigModel.LabelModel(text="Button", size=30),
+                y_label=ConfigModel.LabelModel(text="Value", size=20),
+                x_label=ConfigModel.LabelModel(text="Time", size=20),
+                data_label="Button",
+                color="#ffff00",
+            )
+        )
 
         central_v_box = QVBoxLayout(central_widget)
-        central_v_box.addWidget(tab_widget)
+        central_v_box.addWidget(self.photo_plot)
+        central_v_box.addWidget(self.ain_plot)
+        central_v_box.addWidget(self.btn_plot)
+
+        # connect plots to mqtt 
+
         central_widget.setLayout(central_v_box)
 
         self.showMaximized()
