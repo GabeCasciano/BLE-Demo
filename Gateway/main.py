@@ -104,7 +104,7 @@ def parse_args():
     return ap.parse_args()
 
 
-stop_event = asyncio.Event()
+stop_event = asyncio.Event() # finish setting this up
 
 async def main():
 
@@ -118,7 +118,7 @@ async def main():
     def handle_sig(signum, frame):
         print(f"Caught signal {signum}, stopping")
         mclient.Stop()
-        running = False
+        stop_event.set()
 
     signal.signal(signal.SIGINT, handle_sig)
     signal.signal(signal.SIGTERM, handle_sig)
@@ -129,7 +129,7 @@ async def main():
     async with BleakClient(args.mac) as bclient:
         print(f"Connected: {bclient.is_connected}")
 
-        while bclient.is_connected and running:
+        while bclient.is_connected and not stop_event.is_set()
             try:
                 photo = int.from_bytes(
                     await bclient.read_gatt_char(UUID_PHOTO_CHAR), "little", signed=False
