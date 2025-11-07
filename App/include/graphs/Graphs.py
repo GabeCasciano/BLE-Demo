@@ -1,4 +1,4 @@
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtBoundSignal, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget
 import pyqtgraph as pg
 import numpy as np
@@ -9,6 +9,7 @@ class ConfigModel(BaseModel):
     class LabelModel(BaseModel):
         text: str = "label"
         size: int = 20
+
     buffer: int = 100
     title: LabelModel
     y_label: LabelModel
@@ -16,9 +17,16 @@ class ConfigModel(BaseModel):
     data_label: str = "data"
     color: str = "#ff0000"
 
+
 class PlotWidget(QWidget):
     class Plot(pg.PlotWidget):
-        def __init__(self, config: ConfigModel, width: int = 200, height: int = 100, parent = None):
+        def __init__(
+            self,
+            config: ConfigModel,
+            width: int = 200,
+            height: int = 100,
+            parent=None,
+        ):
             super().__init__(parent)
 
             self.config = config
@@ -38,7 +46,9 @@ class PlotWidget(QWidget):
             self.plotItem.showGrid(True, True, 0.5)
             self.plotItem.enableAutoRange(True, True)
 
-            self._plot = self.plotItem.plot(pen=pg.mkPen(color=self.config.color, width=2))
+            self._plot = self.plotItem.plot(
+                pen=pg.mkPen(color=self.config.color, width=2)
+            )
 
             self._plot.setClipToView(True)
 
@@ -57,8 +67,13 @@ class PlotWidget(QWidget):
             self._np_arr[-1] = data
             self._plot.setData(y=self._np_arr)
 
-
-    def __init__(self, config: ConfigModel, width: int = 200, height: int = 100, parent = None):
+    def __init__(
+        self,
+        config: ConfigModel,
+        width: int = 200,
+        height: int = 100,
+        parent=None,
+    ):
         super().__init__(parent)
         self.config = config
         self._plot = PlotWidget.Plot(config, width, height, parent)
@@ -72,7 +87,8 @@ class PlotWidget(QWidget):
 
         self.setLayout(v_box)
 
-    def _set_data_label(self, data:float):
+
+    def _set_data_label(self, data: float):
         self.data_label.setText(f"{self.config.data_label}: {data}")
 
     @pyqtSlot()
@@ -81,7 +97,18 @@ class PlotWidget(QWidget):
         self._set_data_label(0)
 
     @pyqtSlot(float)
-    def Update(self, data:float):
+    def UpdateF(self, data: float):
         self._plot.Update(data)
         self._set_data_label(data)
 
+    @pyqtSlot(int)
+    def UpdateI(self, data: int):
+        new = float(data)
+        self._plot.Update(new)
+        self._set_data_label(new)
+
+    @pyqtSlot(bool)
+    def UpdateB(self, data:bool):
+        new = float(int(data))
+        self._plot.Update(new)
+        self._set_data_label(new)

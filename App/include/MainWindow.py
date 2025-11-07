@@ -117,8 +117,9 @@ class MainWindow(QMainWindow):
                 x_label=ConfigModel.LabelModel(text="Time", size=20),
                 data_label="Photo",
                 color="#ff0000",
-            )
+            ),
         )
+        m_client.PhotoSignal.connect(self.photo_plot.UpdateI)
 
         self.ain_plot = PlotWidget(
             ConfigModel(
@@ -128,8 +129,9 @@ class MainWindow(QMainWindow):
                 x_label=ConfigModel.LabelModel(text="Time", size=20),
                 data_label="Ain",
                 color="#00ff00",
-            )
+            ),
         )
+        m_client.AinSignal.connect(self.ain_plot.UpdateI)
 
         self.btn_plot = PlotWidget(
             ConfigModel(
@@ -139,8 +141,9 @@ class MainWindow(QMainWindow):
                 x_label=ConfigModel.LabelModel(text="Time", size=20),
                 data_label="Button",
                 color="#ffff00",
-            )
+            ),
         )
+        m_client.BtnSignal.connect(self.btn_plot.UpdateB)
 
         central_v_box = QVBoxLayout(central_widget)
         central_v_box.addWidget(self.photo_plot)

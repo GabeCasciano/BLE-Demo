@@ -25,9 +25,9 @@ class MqttClient(QWidget):
 
     ConnectedSignal = pyqtSignal(bool)
 
-    LedSignal = pyqtSignal(int)
     BtnSignal = pyqtSignal(bool)
     AinSignal = pyqtSignal(int)
+    PhotoSignal = pyqtSignal(int)
 
     EveryMsgSignal = pyqtSignal(str)
 
@@ -114,6 +114,7 @@ class MqttClient(QWidget):
         self._client.on_connect = self._on_connect
         self._client.on_disconnect = self._on_disconnect
 
+
     @property
     def connected(self):
         return self._client.is_connected()
@@ -149,7 +150,6 @@ class MqttClient(QWidget):
     def _sub_all_topcis(self):
         logging.debug(MqttClient.LOG_FMT_STR, f"Subbing all topics")
         self._client.subscribe(self.TOPIC_ALL_READ)
-        self._client.message_callback_add(self.TOPIC_ALL_READ, self._on_message)
 
         self._client.subscribe(self.TOPIC_AIN)
         self._client.message_callback_add(self.TOPIC_AIN, self._on_ain_calbback)
@@ -171,7 +171,9 @@ class MqttClient(QWidget):
         self.AinSignal.emit(int(msg.payload.decode()))
 
     def _on_btn_calbback(self, client: Client, userdata, msg: MQTTMessage):
-        self.BtnSignal.emit(int(msg.payload.decode()))
+        val = bool(int(msg.payload.decode())) 
+        print(val)
+        self.BtnSignal.emit(val)
 
     def _on_photo_calbback(self, client: Client, userdata, msg: MQTTMessage):
         self.PhotoSignal.emit(int(msg.payload.decode()))

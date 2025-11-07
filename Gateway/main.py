@@ -44,6 +44,9 @@ class MqttClient:
             protocol=mqtt.MQTTv311,
         )
 
+        self.client.on_connect = self.on_connect 
+        self.client.on_disconnect = self.on_disconnect
+
     @property
     def led_value_bytes(self):
         return self._led_value.to_bytes(byteorder="little", signed=False)
@@ -66,20 +69,25 @@ class MqttClient:
         print(f"{client._client_id} disconnected reason: {rc}")
 
     def on_led_callback(self, client: mqtt.Client, userdata, msg: mqtt.MQTTMessage):
-        print(f"On LED Value change callback: {msg.payload.decode()}")
-        pass
+        val = int(msg.payload.decode())
+        print(f"On LED Value change callback: {val}")
+        if 0 > val > 255: 
+            val = 0
+        self._led_value = val
 
     def Start(self):
         self.client.connect(host=self.hostname, port=self.port)
+
+        self.client.loop_start()
         print("Starting MQTT")
 
     def Stop(self):
+        self.client.loop_stop()
         self.client.disconnect()
         print("MQTT Stopped")
 
     def PubValue(self, topic:str, payload:str):
         self.client.publish(topic, payload)
-        print(f"Pubbing -> {topic}:\"{payload}\"")
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Route BLE traffic to MQTT")
@@ -134,19 +142,16 @@ async def main():
                 photo = int.from_bytes(
                     await bclient.read_gatt_char(UUID_PHOTO_CHAR), "little", signed=False
                 )
-                print(f"Value from {UUID_PHOTO_CHAR}: {photo}")
                 mclient.PubValue(TOPIC_PHOTO, str(photo))
 
                 ain = int.from_bytes(
                     await bclient.read_gatt_char(UUID_AIN_CHAR), "little", signed=False
                 )
-                print(f"Value from {UUID_AIN_CHAR}: {ain}")
                 mclient.PubValue(TOPIC_AIN, str(ain))
 
                 btn = int.from_bytes(
                     await bclient.read_gatt_char(UUID_BTN_CHAR), "little", signed=False
                 )
-                print(f"Value from {UUID_BTN_CHAR}: {btn}")
                 mclient.PubValue(TOPIC_BTN, str(btn))
 
                 await bclient.write_gatt_char(UUID_LED_CHAR, mclient.led_value_bytes, True)
