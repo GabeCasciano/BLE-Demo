@@ -171,9 +171,8 @@ class MqttClient(QWidget):
         self.AinSignal.emit(int(msg.payload.decode()))
 
     def _on_btn_calbback(self, client: Client, userdata, msg: MQTTMessage):
-        val = bool(int(msg.payload.decode())) 
-        print(val)
-        self.BtnSignal.emit(val)
+        self.BtnSignal.emit(bool(int(msg.payload.decode())) 
+)
 
     def _on_photo_calbback(self, client: Client, userdata, msg: MQTTMessage):
         self.PhotoSignal.emit(int(msg.payload.decode()))
